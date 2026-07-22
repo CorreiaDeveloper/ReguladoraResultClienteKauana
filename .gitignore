@@ -1,0 +1,20 @@
+# Dependências (caso venham a existir)
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Arquivos temporários de captura/testes
+shot-*.png
+mobile-*.png
+m.png
+
+# Ambiente
+.env
+.env.local

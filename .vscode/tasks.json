@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Iniciar demonstração Result",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"--yes",
+				"serve",
+				".",
+				"-l",
+				"3000",
+				"--single"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
