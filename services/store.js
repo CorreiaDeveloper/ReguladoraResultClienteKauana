@@ -54,8 +54,6 @@ export const DEFAULTS = {
     { author: 'Corretora', quote: 'Todo processo foi realizado com muita rapidez, digno de elogios aos envolvidos.', visible: true }
   ],
   indicators: {
-    labels: ['DEZ', 'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL'],
-    series: [74, 78, 81, 79, 84, 82, 86, 88],
     target: '80%+',
     team: '10',
     reach: 'Nacional'
