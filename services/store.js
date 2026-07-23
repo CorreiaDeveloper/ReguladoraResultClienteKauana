@@ -49,8 +49,9 @@ export const DEFAULTS = {
     { name: 'Too Seguros', visible: false }
   ],
   testimonials: [
-    { author: 'Imobiliária parceira', quote: 'Clareza e respeito em cada contato tornam o processo mais seguro para todos.', visible: true },
-    { author: 'Corretor parceiro', quote: 'Os retornos facilitaram o acompanhamento para nossos clientes.', visible: false }
+    { author: 'Garantida Jussara', quote: 'Atendimento humanizado, fui tratada com gentileza, empatia, respeito e prestatividade.', visible: true },
+    { author: 'Garantido George', quote: 'Profissionais proativos e interessados em resolver os assuntos.', visible: true },
+    { author: 'Corretora', quote: 'Todo processo foi realizado com muita rapidez, digno de elogios aos envolvidos.', visible: true }
   ],
   indicators: {
     labels: ['DEZ', 'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL'],
@@ -77,7 +78,7 @@ export const DEFAULTS = {
     phone: '(11) 4040-0547',
     phoneHref: '+551140400547',
     address: 'Av. Melchert, 1324 – Vila Matilde<br>São Paulo/SP',
-    email: '',
+    email: 'kauana@mtreguladora.com.br',
     whatsapp: ''
   }
 };
