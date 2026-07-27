@@ -78,7 +78,7 @@ img { max-width: 100%; }
 .login-card .logo img { filter: brightness(0) invert(1); }
 .site-header.is-scrolled .logo img { filter: none; }
 .site-header .logo img { height: 112px; }
-.site-header.is-scrolled .logo img { height: 84px; }
+.site-header.is-scrolled .logo img { height: 112px; }
 .admin-sidebar .logo img { height: 84px; }
 .login-card .logo img { height: 120px; }
 .nav-links { display: flex; align-items: center; gap: 23px; font-size: .78rem; font-weight: 800; }
