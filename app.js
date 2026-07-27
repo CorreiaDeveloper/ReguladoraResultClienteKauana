@@ -25,6 +25,137 @@ function initials(name = '') {
   return name.trim().split(/\s+/).slice(0, 2).map(word => word[0] || '').join('').toUpperCase() || 'RA';
 }
 
+// Alternância de tema visual (site público). Mesma marca, três camadas de
+// apresentação: "current" (padrão), "tech" (mais tecnológica) e "classic"
+// (institucional tradicional). Persistido em localStorage como o restante
+// do conteúdo (ver services/store.js). O botão CICLA entre as três a cada
+// clique, em vez de alternar em binário.
+const THEME_KEY = 'result:theme';
+const THEME_ORDER = ['current', 'tech', 'classic'];
+const THEME_LABELS = { current: 'Atual', tech: 'Tech', classic: 'Clássico' };
+function getTheme() {
+  try { const v = localStorage.getItem(THEME_KEY); return THEME_ORDER.includes(v) ? v : 'current'; } catch { return 'current'; }
+}
+function setTheme(theme) {
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* localStorage indisponível */ }
+}
+function themeToggle() {
+  const theme = getTheme();
+  const dots = THEME_ORDER.map(t => `<span class="theme-toggle__dot${t === theme ? ' is-active' : ''}"></span>`).join('');
+  return `<button type="button" class="theme-toggle" data-theme-toggle aria-label="Versão exibida: ${THEME_LABELS[theme]}. Clique para ver a próxima versão."><span class="theme-toggle__dots">${dots}</span><span class="theme-toggle__label">${THEME_LABELS[theme]}</span></button>`;
+}
+
+// Anima um número (ex.: métricas institucionais) contando até o valor alvo
+// quando o elemento entra em viewport. Usado só pelo Modo Tech.
+function animateCountUp(el) {
+  const target = Number(el.dataset.countupTarget);
+  if (!Number.isFinite(target)) return;
+  const suffix = el.dataset.countupSuffix || '';
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = target + suffix; return; }
+  const duration = 900;
+  const start = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    el.textContent = Math.round(target * progress) + suffix;
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// Componentes exclusivos do Modo Tech (home()/proofSection()). Reaproveitam
+// os mesmos dados de getContent() — só muda a composição visual, nunca o
+// conteúdo, para manter as duas versões consistentes.
+function visiblePartners(c) {
+  const list = (c.partners || []).filter(partner => partner.visible && partner.name.trim());
+  return list.length ? list : [{ name: 'Seguradora parceira' }, { name: 'Seguradora parceira' }];
+}
+function proofMetrics(p) {
+  const items = p.metrics.map(m => {
+    const match = String(m.value).match(/^(\d+)(.*)$/);
+    if (match) return `<div class="proof-metric"><strong data-countup-target="${match[1]}" data-countup-suffix="${esc(match[2])}">0${esc(match[2])}</strong><span>${esc(m.label)}</span></div>`;
+    return `<div class="proof-metric"><strong>${esc(m.value)}</strong><span>${esc(m.label)}</span></div>`;
+  }).join('');
+  return `<div class="proof-metrics-nova reveal">${items}</div>`;
+}
+function proofBento(c, p) {
+  const leaderMark = c.images.leader ? `<span class="leader-mark leader-mark--photo"><img src="${c.images.leader}" alt="Foto de ${esc(p.leaderName)}" /></span>` : `<span class="leader-mark">${esc(initials(p.leaderName))}</span>`;
+  const partnerPlates = visiblePartners(c).map(partner => `<span>${esc(partner.name)}</span>`).join('');
+  const visibleTestimonials = (c.testimonials || []).filter(t => t.visible && t.quote.trim());
+  const testimonialSource = visibleTestimonials.length ? visibleTestimonials : [{ quote: p.quote, author: '' }];
+  const testimonialCells = testimonialSource.map((t, i) => `<article class="bento-cell bento-cell--testimonial${i === 0 ? ' bento-cell--feature' : ''} reveal"><span class="testimonial-card__mark" aria-hidden="true">“</span><blockquote>${esc(t.quote)}</blockquote>${t.author ? `<cite class="testimonial-card__author">${esc(t.author)}</cite>` : ''}</article>`).join('');
+  return `<div class="bento-grid" aria-label="Depoimentos e parcerias"><article class="bento-cell bento-cell--leader reveal">${leaderMark}<div><span class="eyebrow">${esc(p.leaderRole)}</span><h3>${esc(p.leaderName)}</h3><p>${esc(p.leaderBio)}</p></div></article><article class="bento-cell bento-cell--partners reveal"><span class="eyebrow">Parcerias</span><h3>Presença que reforça legitimidade.</h3><div class="partner-plates">${partnerPlates}</div><small>Marcas serão inseridas após aprovação das parceiras.</small></article>${testimonialCells}</div>`;
+}
+
+// Arquitetura de página do Modo Tech: cabeçalho mínimo + overlay de menu em
+// tela cheia + rodapé enxuto substituem header()/footer() em TODAS as
+// páginas públicas (não só a home). Nenhum elemento aqui simula software —
+// sem ticker, sem marquee, sem cartão com "dots" de janela — só tipografia,
+// geometria abstrata e os dados reais de getContent().
+function techHeader() {
+  const route = currentRoute();
+  const link = (href, group, label) => `<a href="/${href}" data-route class="${navGroups[group].includes(route) ? 'is-active' : ''}"${navGroups[group].includes(route) ? ' aria-current="page"' : ''}>${label}</a>`;
+  return `<header class="tech-header"><div class="container tech-header__inner">${logo()}<button class="menu-button" aria-label="Abrir menu" aria-expanded="false"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><nav class="nav-links tech-nav" aria-label="Navegação principal">${link('quem-somos', 'quem-somos', 'Empresa')}${link('servicos', 'servicos', 'Serviços')}${link('seguro-fianca', 'seguro-fianca', 'Seguro Fiança')}${link('conteudos', 'conteudos', 'Conteúdos')}<a href="/contato" data-route class="btn btn--primary">Fale com a Result</a></nav></div></header>`;
+}
+function consoleFooter() {
+  const s = getContent().settings;
+  return `<footer class="console-footer"><div class="console-footer__brand">${logo()}<span>Regulação de sinistros especializada em Seguro Fiança.</span></div><div class="console-footer__links"><a data-route href="/contato">Fale com a Result</a><a data-route href="/politica-de-privacidade">Privacidade</a><a data-route href="/termos">Termos</a><a data-route href="/admin">Painel (demo)</a><a href="#top">Voltar ao topo ↑</a></div><span class="console-footer__meta">© ${new Date().getFullYear()} Result · ${esc(s.phone)}</span></footer>`;
+}
+function wrapTech(bodyHtml) {
+  return `<div class="tech-shell">${techHeader()}<main id="main-content">${bodyHtml}</main>${consoleFooter()}</div>`;
+}
+function heroTech(h) {
+  return `<section class="hero hero--nova" id="top"><div class="container hero-nova"><span class="eyebrow reveal">${esc(h.heroEyebrow)}</span><h1 class="hero-title hero-title--xl reveal">${h.heroTitle}</h1><p class="hero-copy reveal">${esc(h.heroCopy)}</p><div class="hero-actions reveal"><a class="btn btn--dark" href="/para-seguradoras" data-route>${esc(h.heroPrimaryLabel)} ${icons.arrow}</a><a class="btn btn--ghost" href="/contato" data-route>${esc(h.heroSecondaryLabel)}</a></div><p class="hero-nova__tag reveal"><span class="dot"></span>${esc(h.heroCardItem)}</p></div></section>`;
+}
+function pipelineSection(h, services, steps) {
+  return `<section class="section pipeline-section"><div class="container"><div class="pipeline"><div class="pipeline__stage reveal"><div class="pipeline__node">01</div><div class="pipeline__body"><span class="eyebrow">O que entregamos</span><h2 class="display">Uma operação que dá visibilidade a cada etapa.</h2><p class="copy">${esc(h.servicesIntro)}</p><div class="carousel">${services}</div></div></div><div class="pipeline__stage reveal"><div class="pipeline__node">02</div><div class="pipeline__body"><span class="eyebrow">Método Result</span><h2 class="display">Um fluxo claro de acompanhar.</h2><p class="copy">Método não é burocracia. É o que permite que todos saibam onde estão, o que acontece agora e qual é o próximo passo.</p><div class="timeline">${steps}</div></div></div></div></div></section>`;
+}
+
+// Arquitetura do Modo Clássico: institucional tradicional (serifada,
+// simétrica, seções numeradas em algarismos romanos, tom "casa
+// estabelecida"), inspirado em escritórios de advocacia e seguradoras
+// tradicionais. Header/footer próprios aplicados a TODAS as páginas
+// públicas via wrapClassic(), igual ao padrão já usado pelo Modo Tech.
+function classicHeader() {
+  const route = currentRoute();
+  const link = (href, group, label) => `<a href="/${href}" data-route class="${navGroups[group].includes(route) ? 'is-active' : ''}"${navGroups[group].includes(route) ? ' aria-current="page"' : ''}>${label}</a>`;
+  return `<header class="classic-header"><div class="container classic-header__inner">${logo()}<button class="menu-button" aria-label="Abrir menu" aria-expanded="false"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><nav class="nav-links classic-nav" aria-label="Navegação principal">${link('quem-somos', 'quem-somos', 'Empresa')}${link('servicos', 'servicos', 'Serviços')}${link('seguro-fianca', 'seguro-fianca', 'Seguro Fiança')}${link('conteudos', 'conteudos', 'Conteúdos')}<a href="/contato" data-route class="btn btn--classic-primary">Fale com a Result</a></nav></div></header>`;
+}
+function classicFooter() {
+  const s = getContent().settings;
+  return `<footer class="classic-footer"><div class="container"><div class="classic-footer__grid"><div class="classic-footer__brand">${logo()}<p>Regulação de sinistros especializada em Seguro Fiança. Critério técnico e cuidado em cada relação.</p></div><div class="classic-footer__col"><h3>Institucional</h3><a data-route href="/quem-somos">Quem somos</a><a data-route href="/nossa-historia">Nossa história</a><a data-route href="/como-atuamos">Como atuamos</a><a data-route href="/servicos">Serviços</a></div><div class="classic-footer__col"><h3>Para o mercado</h3><a data-route href="/para-seguradoras">Seguradoras</a><a data-route href="/para-imobiliarias">Imobiliárias</a><a data-route href="/para-corretores">Corretores</a><a data-route href="/trabalhe-conosco">Trabalhe conosco</a></div><div class="classic-footer__col"><h3>Contato</h3><p>${s.address}</p><a href="tel:+${esc(s.phoneHref)}">${esc(s.phone)}</a>${s.whatsapp ? `<a href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}<a data-route href="/politica-de-privacidade">Privacidade</a><a data-route href="/termos">Termos de uso</a><a data-route href="/admin">Área administrativa (demo)</a></div></div><div class="classic-footer__bottom"><span>© ${new Date().getFullYear()} Result Reguladora de Sinistros.</span><a href="#top">Voltar ao topo ↑</a></div></div></footer>`;
+}
+function wrapClassic(bodyHtml) {
+  return `<div class="classic-shell">${classicHeader()}<main id="main-content">${bodyHtml}</main>${classicFooter()}</div>`;
+}
+function wrapByTheme(body) {
+  const theme = getTheme();
+  if (theme === 'tech') return wrapTech(body);
+  if (theme === 'classic') return wrapClassic(body);
+  return `${header()}<main id="main-content">${body}</main>${footer()}`;
+}
+function heroClassic(h) {
+  return `<section class="classic-hero" id="top"><span class="classic-hero__bg" aria-hidden="true">Result</span><div class="container classic-hero__inner reveal"><span class="classic-eyebrow">${esc(h.heroEyebrow)}</span><h1 class="classic-hero__title">${h.heroTitle}</h1><p class="classic-hero__copy">${esc(h.heroCopy)}</p><div class="classic-hero__actions"><a class="btn btn--classic-primary" href="/para-seguradoras" data-route>${esc(h.heroPrimaryLabel)}</a><a class="btn btn--classic-ghost" href="/contato" data-route>${esc(h.heroSecondaryLabel)}</a></div></div></section>`;
+}
+function classicSectionHead(numeral, eyebrow, title) {
+  return `<div class="classic-section__head"><span class="classic-section__num">${numeral}</span><span class="classic-eyebrow">${esc(eyebrow)}</span><h2 class="classic-section__title">${title}</h2></div>`;
+}
+function classicList(items) {
+  return `<div class="classic-list">${items.map(item => `<div class="classic-list-item"><span class="classic-list-item__num">${esc(item.num)}</span><div><h3>${esc(item.title)}</h3>${item.text ? `<p>${esc(item.text)}</p>` : ''}</div></div>`).join('')}</div>`;
+}
+function classicProof(c, p) {
+  const partners = visiblePartners(c).map(x => esc(x.name)).join(' · ');
+  const visibleTestimonials = (c.testimonials || []).filter(t => t.visible && t.quote.trim());
+  const testimonialSource = visibleTestimonials.length ? visibleTestimonials : [{ quote: p.quote, author: '' }];
+  const quotes = testimonialSource.map(t => `<figure class="classic-quote reveal"><blockquote>“${esc(t.quote)}”</blockquote>${t.author ? `<figcaption>${esc(t.author)}</figcaption>` : ''}</figure>`).join('');
+  const metrics = p.metrics.map(m => {
+    const match = String(m.value).match(/^(\d+)(.*)$/);
+    if (match) return `<div class="classic-metric"><strong data-countup-target="${match[1]}" data-countup-suffix="${esc(match[2])}">0${esc(match[2])}</strong><span>${esc(m.label)}</span></div>`;
+    return `<div class="classic-metric"><strong>${esc(m.value)}</strong><span>${esc(m.label)}</span></div>`;
+  }).join('');
+  const leaderMark = c.images.leader ? `<span class="leader-mark leader-mark--photo"><img src="${c.images.leader}" alt="Foto de ${esc(p.leaderName)}" /></span>` : `<span class="leader-mark">${esc(initials(p.leaderName))}</span>`;
+  return `<div class="classic-metrics reveal">${metrics}</div><div class="classic-quotes">${quotes}</div><div class="classic-leader reveal">${leaderMark}<div><span class="classic-eyebrow">${esc(p.leaderRole)}</span><h3>${esc(p.leaderName)}</h3><p>${esc(p.leaderBio)}</p></div></div><p class="classic-partners"><span class="classic-eyebrow">Parcerias</span><br>${partners}</p>`;
+}
+
 const pageData = {
   'quem-somos': { eyebrow: 'A Result', title: 'Rigor técnico. Escuta ativa. Relações que permanecem.', lead: 'A Result é uma empresa terceirizada de seguradoras, dedicada exclusivamente à condução de sinistros de Seguro Fiança. Atuamos com cobrança, análise documental e apoio aos pagamentos, sem perder de vista as pessoas envolvidas em cada processo.', sections: [['Um olhar especializado', 'Seguro Fiança exige repertório, contexto e uma leitura cuidadosa das relações envolvidas. Por isso, concentramos nossa operação nessa especialidade: para que cada encaminhamento seja tecnicamente sólido, claro e responsável.'], ['Duas frentes, uma experiência integrada', 'Nossa operação reúne as áreas de cobrança e análise documental para pagamento. Em ambas, trabalhamos com processos organizados, comunicação objetiva e cuidado para conduzir situações sensíveis.'], ['Princípios que orientam decisões', 'Clareza na comunicação, consistência na análise e atendimento humanizado não são etapas acessórias. São o padrão pelo qual sustentamos cada relação com seguradoras, imobiliárias, corretores e inquilinos.'], ['Nossa cultura', 'Somos uma empresa familiar e próxima. Acreditamos que resultados sustentáveis também dependem de entender contextos, respeitar histórias e oferecer apoio quando ele é necessário.']] },
   'nossa-historia': { eyebrow: 'Nossa história', title: 'Uma empresa criada para tornar a condução de sinistros mais próxima e mais clara.', lead: 'A Result nasce da convicção de que processos de Seguro Fiança podem ser conduzidos com precisão sem perder de vista as pessoas que estão em torno deles.', sections: [['O começo', 'Estruturamos nossa atuação para apoiar seguradoras na condução de sinistros de Seguro Fiança, com uma operação que combina cobrança, análise documental e apoio aos pagamentos.'], ['A escolha pela especialização', 'Escolhemos profundidade em vez de dispersão. Ao concentrar nossa experiência em Seguro Fiança, criamos uma operação preparada para compreender as particularidades de cada demanda.'], ['O que continua nos movendo', 'Acreditamos que o melhor resultado é aquele sustentado por uma análise justa, uma comunicação compreensível e relações preservadas ao longo de toda a jornada.']] },
@@ -52,6 +183,7 @@ function footer() { const s = getContent().settings; return `<footer class="site
 function home() {
   const c = getContent();
   const h = c.home;
+  const theme = getTheme();
   const artImage = c.images.institutional ? `<img class="art-photo" src="${c.images.institutional}" alt="Imagem institucional Result" />` : '';
   const services = h.services.map(card => `<article class="service-card reveal"><span class="service-card__number">${esc(card.number)}</span><h3>${esc(card.title)}</h3><p>${esc(card.text)}</p><span class="arrow">↗</span></article>`).join('');
   const steps = h.steps.map((step, i) => `<div class="step reveal"><div class="step__num">0${i + 1}</div><h3>${esc(step.title)}</h3><p>${esc(step.text)}</p></div>`).join('');
@@ -59,15 +191,40 @@ function home() {
   const featured = insights[0] || c.articles[0] || { category: '—', title: 'Novos conteúdos em breve.' };
   const secondary = insights.slice(1, 3);
   const insightList = secondary.map(a => `<article class="insight-item"><span class="insight-date">${esc(a.date)}</span><h3>${esc(a.title)}</h3></article>`).join('') || '<article class="insight-item"><span class="insight-date">—</span><h3>Novos conteúdos em breve.</h3></article>';
-  return `${header()}<main id="main-content"><section class="hero" id="top"><div class="container hero-grid"><div class="reveal"><span class="eyebrow">${esc(h.heroEyebrow)}</span><h1 class="hero-title">${h.heroTitle}</h1><p class="hero-copy">${esc(h.heroCopy)}</p><div class="hero-actions"><a class="btn btn--dark" href="/para-seguradoras" data-route>${esc(h.heroPrimaryLabel)} ${icons.arrow}</a><a class="btn btn--ghost" href="/contato" data-route>${esc(h.heroSecondaryLabel)}</a></div></div><aside class="hero-card reveal" aria-label="Compromisso Result"><span class="hero-card__kicker">Nosso compromisso</span><h2>Decisões bem conduzidas começam por uma escuta cuidadosa.</h2><p>Em cada processo, técnica e proximidade trabalham juntas para construir clareza.</p><div class="hero-card__rule"></div><div class="hero-card__item"><span class="dot"></span> ${esc(h.heroCardItem)}</div></aside></div><div class="hero-scroll"><i></i> role para explorar</div></section><div class="container trust-strip reveal"><div class="trust-grid"><div class="trust-item"><span class="trust-no">01</span><div><strong>Especialização concentrada</strong><small>Profundidade em Seguro Fiança.</small></div></div><div class="trust-item"><span class="trust-no">02</span><div><strong>Duas áreas integradas</strong><small>Cobrança e análise documental.</small></div></div><div class="trust-item"><span class="trust-no">03</span><div><strong>Atendimento humano</strong><small>Relações tratadas com respeito.</small></div></div><div class="trust-item"><span class="trust-no">04</span><div><strong>Atuação nacional</strong><small>Uma experiência consistente onde for preciso.</small></div></div></div></div><section class="section"><div class="container split"><div class="art-panel reveal" aria-label="Representação da precisão e proximidade Result">${artImage}<div class="art-caption"><b>Processos com contexto.</b>Porque cada sinistro envolve muito mais do que documentação.</div></div><div class="reveal"><span class="eyebrow">A Result</span><h2 class="display">${esc(h.introTitle)}</h2><p class="copy">${esc(h.introCopy)}</p></div></div></section><section class="section dark-section"><div class="container"><div class="reveal"><span class="eyebrow">O que entregamos</span><h2 class="display">Uma operação que dá visibilidade a cada etapa.</h2><p class="copy">${esc(h.servicesIntro)}</p></div><div class="cards">${services}</div></div></section><section class="section"><div class="container"><div class="process-head reveal"><div><span class="eyebrow">Método Result</span><h2 class="display">Um fluxo claro de acompanhar.</h2></div><p class="copy">Método não é burocracia. É o que permite que todos saibam onde estão, o que acontece agora e qual é o próximo passo.</p></div><div class="timeline">${steps}</div></div></section><section class="section section--soft insights-section"><div class="container"><span class="eyebrow">Perspectivas</span><h2 class="display">Conhecimento para relações de seguro mais seguras.</h2><div class="insight-grid reveal"><article class="insight-large"><span>Em destaque · ${esc(featured.category)}</span><h3>${esc(featured.title)}</h3></article><div class="insight-list">${insightList}</div></div></div></section>${proofSection(c)}<section class="cta"><div class="container cta-inner"><div><span class="eyebrow">Vamos conversar</span><h2 class="display">Sua operação merece uma regulação à altura das relações que protege.</h2></div><a class="btn btn--dark" data-route href="/contato">Entrar em contato ${icons.arrow}</a></div></section></main>${footer()}`;
+  const insightsSection = `<section class="section section--soft insights-section"><div class="container"><span class="eyebrow">Perspectivas</span><h2 class="display">Conhecimento para relações de seguro mais seguras.</h2><div class="insight-grid reveal"><article class="insight-large"><span>Em destaque · ${esc(featured.category)}</span><h3>${esc(featured.title)}</h3></article><div class="insight-list">${insightList}</div></div></div></section>`;
+  const trustStrip = `<div class="container trust-strip reveal"><div class="trust-grid"><div class="trust-item"><span class="trust-no">01</span><div><strong>Especialização concentrada</strong><small>Profundidade em Seguro Fiança.</small></div></div><div class="trust-item"><span class="trust-no">02</span><div><strong>Duas áreas integradas</strong><small>Cobrança e análise documental.</small></div></div><div class="trust-item"><span class="trust-no">03</span><div><strong>Atendimento humano</strong><small>Relações tratadas com respeito.</small></div></div><div class="trust-item"><span class="trust-no">04</span><div><strong>Atuação nacional</strong><small>Uma experiência consistente onde for preciso.</small></div></div></div></div>`;
+
+  if (theme === 'tech') {
+    const introTech = `<section class="section intro-tech"><div class="container intro-tech__inner reveal"><span class="eyebrow">A Result</span><h2 class="display">${esc(h.introTitle)}</h2><p class="copy">${esc(h.introCopy)}</p>${artImage ? `<div class="intro-tech__frame">${artImage}</div>` : ''}</div></section>`;
+    const body = `${heroTech(h)}${trustStrip}${introTech}${pipelineSection(h, services, steps)}${insightsSection}${proofSection(c)}<section class="cta cta--tech"><div class="container cta-inner"><div><span class="eyebrow">Vamos conversar</span><h2 class="display glitch-text">Sua operação merece uma regulação à altura das relações que protege.</h2></div><a class="btn btn--dark" data-route href="/contato">Entrar em contato ${icons.arrow}</a></div></section>`;
+    return wrapTech(body);
+  }
+
+  if (theme === 'classic') {
+    const serviceItems = h.services.map(s => ({ num: s.number, title: s.title, text: s.text }));
+    const stepItems = h.steps.map((s, i) => ({ num: `0${i + 1}`, title: s.title, text: s.text }));
+    const insightItems = [featured, ...secondary].map(a => ({ num: a.date || a.category || '—', title: a.title }));
+    const body = `${heroClassic(h)}${trustStrip}
+      <section class="classic-section"><div class="container classic-section__inner">${classicSectionHead('I', 'A Result', esc(h.introTitle))}<p class="classic-copy">${esc(h.introCopy)}</p>${artImage ? `<div class="classic-frame">${artImage}</div>` : ''}</div></section>
+      <section class="classic-section classic-section--soft"><div class="container classic-section__inner">${classicSectionHead('II', 'O que entregamos', 'Uma operação que dá visibilidade a cada etapa.')}<p class="classic-copy">${esc(h.servicesIntro)}</p>${classicList(serviceItems)}</div></section>
+      <section class="classic-section"><div class="container classic-section__inner">${classicSectionHead('III', 'Método Result', 'Um fluxo claro de acompanhar.')}${classicList(stepItems)}</div></section>
+      <section class="classic-section classic-section--soft"><div class="container classic-section__inner">${classicSectionHead('IV', 'Perspectivas', 'Conhecimento para relações de seguro mais seguras.')}${classicList(insightItems)}</div></section>
+      <section class="classic-section"><div class="container classic-section__inner">${classicSectionHead('V', 'Confiança', 'Estrutura para apoiar relações que não podem parar.')}${classicProof(c, c.proof)}</div></section>
+      <section class="classic-cta"><div class="container classic-cta__inner"><h2>Sua operação merece uma regulação à altura das relações que protege.</h2><a class="btn btn--classic-invert" data-route href="/contato">Entrar em contato</a></div></section>`;
+    return wrapClassic(body);
+  }
+
+  return `${header()}<main id="main-content"><section class="hero" id="top"><div class="container hero-grid"><div class="reveal"><span class="eyebrow">${esc(h.heroEyebrow)}</span><h1 class="hero-title">${h.heroTitle}</h1><p class="hero-copy">${esc(h.heroCopy)}</p><div class="hero-actions"><a class="btn btn--dark" href="/para-seguradoras" data-route>${esc(h.heroPrimaryLabel)} ${icons.arrow}</a><a class="btn btn--ghost" href="/contato" data-route>${esc(h.heroSecondaryLabel)}</a></div></div><aside class="hero-card reveal" aria-label="Compromisso Result"><span class="hero-card__kicker">Nosso compromisso</span><h2>Decisões bem conduzidas começam por uma escuta cuidadosa.</h2><p>Em cada processo, técnica e proximidade trabalham juntas para construir clareza.</p><div class="hero-card__rule"></div><div class="hero-card__item"><span class="dot"></span> ${esc(h.heroCardItem)}</div></aside></div><div class="hero-scroll"><i></i> role para explorar</div></section>${trustStrip}<section class="section"><div class="container split"><div class="art-panel reveal" aria-label="Representação da precisão e proximidade Result">${artImage}<div class="art-caption"><b>Processos com contexto.</b>Porque cada sinistro envolve muito mais do que documentação.</div></div><div class="reveal"><span class="eyebrow">A Result</span><h2 class="display">${esc(h.introTitle)}</h2><p class="copy">${esc(h.introCopy)}</p></div></div></section><section class="section dark-section"><div class="container"><div class="reveal"><span class="eyebrow">O que entregamos</span><h2 class="display">Uma operação que dá visibilidade a cada etapa.</h2><p class="copy">${esc(h.servicesIntro)}</p></div><div class="cards">${services}</div></div></section><section class="section"><div class="container"><div class="process-head reveal"><div><span class="eyebrow">Método Result</span><h2 class="display">Um fluxo claro de acompanhar.</h2></div><p class="copy">Método não é burocracia. É o que permite que todos saibam onde estão, o que acontece agora e qual é o próximo passo.</p></div><div class="timeline">${steps}</div></div></section>${insightsSection}${proofSection(c)}<section class="cta"><div class="container cta-inner"><div><span class="eyebrow">Vamos conversar</span><h2 class="display">Sua operação merece uma regulação à altura das relações que protege.</h2></div><a class="btn btn--dark" data-route href="/contato">Entrar em contato ${icons.arrow}</a></div></section></main>${footer()}`;
 }
 
 function proofSection(c) {
   const p = c.proof;
+  if (getTheme() === 'tech') {
+    return `<section class="section proof-section proof-section--tech"><div class="container"><div class="proof-intro reveal"><span class="eyebrow">Confiança que se constrói no processo</span><h2 class="display">Estrutura para apoiar relações que não podem parar.</h2><p class="copy">A Result combina uma operação especializada, presença nacional e uma cultura de atendimento próxima.</p></div>${proofMetrics(p)}${proofBento(c, p)}</div></section>`;
+  }
   const metrics = p.metrics.map(m => `<article><strong>${esc(m.value)}</strong><span>${esc(m.label)}</span></article>`).join('');
   const leaderMark = c.images.leader ? `<span class="leader-mark leader-mark--photo"><img src="${c.images.leader}" alt="Foto de ${esc(p.leaderName)}" /></span>` : `<span class="leader-mark">${esc(initials(p.leaderName))}</span>`;
-  const visiblePartners = (c.partners || []).filter(partner => partner.visible && partner.name.trim());
-  const partnerPlates = (visiblePartners.length ? visiblePartners : [{ name: 'Seguradora parceira' }, { name: 'Seguradora parceira' }]).map(partner => `<span>${esc(partner.name)}</span>`).join('');
+  const partnerPlates = visiblePartners(c).map(partner => `<span>${esc(partner.name)}</span>`).join('');
   const visibleTestimonials = (c.testimonials || []).filter(t => t.visible && t.quote.trim());
   const testimonialSource = visibleTestimonials.length ? visibleTestimonials : [{ quote: p.quote, author: '' }];
   const testimonialCards = testimonialSource.map(t => `<article class="testimonial-card reveal"><span class="testimonial-card__mark" aria-hidden="true">“</span><blockquote>${esc(t.quote)}</blockquote>${t.author ? `<cite class="testimonial-card__author">${esc(t.author)}</cite>` : ''}</article>`).join('');
@@ -75,7 +232,7 @@ function proofSection(c) {
   return `<section class="section section--soft proof-section"><div class="container"><div class="proof-intro reveal"><span class="eyebrow">Confiança que se constrói no processo</span><h2 class="display">Estrutura para apoiar relações que não podem parar.</h2><p class="copy">A Result combina uma operação especializada, presença nacional e uma cultura de atendimento próxima. Os indicadores abaixo são apresentados como modelo de acompanhamento para esta demonstração.</p></div><div class="proof-metrics reveal" aria-label="Indicadores institucionais demonstrativos">${metrics}</div><div class="proof-grid"><section class="proof-card reveal"><span class="eyebrow">Parcerias</span><h3>Uma presença que reforça legitimidade.</h3><p>Espaço preparado para apresentar seguradoras parceiras após autorização formal de uso de marca.</p><div class="partner-plates">${partnerPlates}</div><small>Marcas serão inseridas após aprovação das parceiras.</small></section><article class="proof-card leader-card leader-card--panel reveal">${leaderMark}<div><span class="eyebrow">${esc(p.leaderRole)}</span><h3>${esc(p.leaderName)}</h3><p>${esc(p.leaderBio)}</p></div></article></div>${testimonialsBlock}</div></section>`;
 }
 
-function interior(slug) { const data = pageData[slug]; if (!data) return notFound(); const sections = data.sections.map(([title,text]) => `<section id="${title.toLowerCase().replaceAll(' ','-').replaceAll('.','')}"><h2>${title}</h2><p>${text}</p></section>`).join(''); return `${header()}<main id="main-content"><header class="page-hero"><div class="container"><nav class="breadcrumb" aria-label="Breadcrumb"><a data-route href="/">Início</a><span>/</span><span>${data.eyebrow}</span></nav><span class="eyebrow">${data.eyebrow}</span><h1 class="display">${data.title}</h1><p class="copy">${data.lead}</p></div></header><section class="section"><div class="container content-grid"><article class="article reveal">${sections}</article><aside class="side-nav"><strong>Nesta página</strong>${data.sections.map(([title])=>`<a href="#${title.toLowerCase().replaceAll(' ','-').replaceAll('.','')}">${title}</a>`).join('')}</aside></div></section><section class="cta"><div class="container cta-inner"><div><span class="eyebrow">Atendimento Result</span><h2 class="display">Conheça uma regulação feita para dar segurança ao mercado.</h2></div><a class="btn btn--dark" data-route href="/contato">Fale conosco ${icons.arrow}</a></div></section></main>${footer()}`; }
+function interior(slug) { const data = pageData[slug]; if (!data) return notFound(); const sections = data.sections.map(([title,text]) => `<section id="${title.toLowerCase().replaceAll(' ','-').replaceAll('.','')}"><h2>${title}</h2><p>${text}</p></section>`).join(''); const body = `<header class="page-hero"><div class="container"><nav class="breadcrumb" aria-label="Breadcrumb"><a data-route href="/">Início</a><span>/</span><span>${data.eyebrow}</span></nav><span class="eyebrow">${data.eyebrow}</span><h1 class="display">${data.title}</h1><p class="copy">${data.lead}</p></div></header><section class="section"><div class="container content-grid"><article class="article reveal">${sections}</article><aside class="side-nav"><strong>Nesta página</strong>${data.sections.map(([title])=>`<a href="#${title.toLowerCase().replaceAll(' ','-').replaceAll('.','')}">${title}</a>`).join('')}</aside></div></section><section class="cta"><div class="container cta-inner"><div><span class="eyebrow">Atendimento Result</span><h2 class="display">Conheça uma regulação feita para dar segurança ao mercado.</h2></div><a class="btn btn--dark" data-route href="/contato">Fale conosco ${icons.arrow}</a></div></section>`; return wrapByTheme(body); }
 
 function contactPage(type = 'Contato geral') {
   const meta = {
@@ -94,12 +251,13 @@ function contactPage(type = 'Contato geral') {
   const whatsapp = settings.whatsapp
     ? `<a class="contact-aside__row" href="https://wa.me/${esc(settings.whatsapp)}" target="_blank" rel="noopener"><span class="contact-aside__ico">${icons.chat}</span><span><strong>WhatsApp</strong><small>Atendimento rápido</small></span></a>`
     : '';
-  return `${header()}<main id="main-content"><header class="page-hero"><div class="container"><nav class="breadcrumb" aria-label="Breadcrumb"><a data-route href="/">Início</a><span>/</span><span>Contato</span></nav><span class="eyebrow">Fale com a Result</span><h1 class="display">Toda boa relação começa por uma conversa clara.</h1><p class="copy">Escolha o assunto para que sua mensagem siga o caminho mais adequado. Nesta demonstração, os envios são simulados.</p></div></header><section class="section"><div class="container form-shell"><aside class="form-side"><div class="form-tabs" role="tablist" aria-label="Tipo de atendimento">${options.map(option=>`<button class="form-tab ${option === type ? 'is-active':''}" role="tab" aria-selected="${option === type}" data-contact-type="${option}"><span class="form-tab__ico">${meta[option].icon}</span><span class="form-tab__text"><strong>${option}</strong><small>${meta[option].hint}</small></span></button>`).join('')}</div><div class="contact-aside"><h3 class="contact-aside__title">Canais diretos</h3><a class="contact-aside__row" href="tel:+${esc(settings.phoneHref)}"><span class="contact-aside__ico">${icons.phone}</span><span><strong>${esc(settings.phone)}</strong><small>Seg. a sex., 9h às 18h</small></span></a>${whatsapp}<div class="contact-aside__row"><span class="contact-aside__ico">${icons.pin}</span><span><strong>Escritório</strong><small>${settings.address}</small></span></div></div></aside><form id="contact-form"><header class="form-head"><h2 class="form-title">${type}</h2><p class="form-subtitle">${active.subtitle}</p></header><div class="admin-form__grid"><div class="field"><label for="name">Nome</label><input id="name" required placeholder="Seu nome" /></div><div class="field"><label for="email">E-mail</label><input id="email" type="email" required placeholder="nome@empresa.com" /></div></div>${fields}<button class="btn btn--primary" type="submit">Enviar mensagem ${icons.arrow}</button><p class="form-note">Ao enviar, você concorda com nossa Política de Privacidade. Nenhuma informação será enviada nesta demonstração.</p></form></div></section></main>${footer()}`;
+  const body = `<header class="page-hero"><div class="container"><nav class="breadcrumb" aria-label="Breadcrumb"><a data-route href="/">Início</a><span>/</span><span>Contato</span></nav><span class="eyebrow">Fale com a Result</span><h1 class="display">Toda boa relação começa por uma conversa clara.</h1><p class="copy">Escolha o assunto para que sua mensagem siga o caminho mais adequado. Nesta demonstração, os envios são simulados.</p></div></header><section class="section"><div class="container form-shell"><aside class="form-side"><div class="form-tabs" role="tablist" aria-label="Tipo de atendimento">${options.map(option=>`<button class="form-tab ${option === type ? 'is-active':''}" role="tab" aria-selected="${option === type}" data-contact-type="${option}"><span class="form-tab__ico">${meta[option].icon}</span><span class="form-tab__text"><strong>${option}</strong><small>${meta[option].hint}</small></span></button>`).join('')}</div><div class="contact-aside"><h3 class="contact-aside__title">Canais diretos</h3><a class="contact-aside__row" href="tel:+${esc(settings.phoneHref)}"><span class="contact-aside__ico">${icons.phone}</span><span><strong>${esc(settings.phone)}</strong><small>Seg. a sex., 9h às 18h</small></span></a>${whatsapp}<div class="contact-aside__row"><span class="contact-aside__ico">${icons.pin}</span><span><strong>Escritório</strong><small>${settings.address}</small></span></div></div></aside><form id="contact-form"><header class="form-head"><h2 class="form-title">${type}</h2><p class="form-subtitle">${active.subtitle}</p></header><div class="admin-form__grid"><div class="field"><label for="name">Nome</label><input id="name" required placeholder="Seu nome" /></div><div class="field"><label for="email">E-mail</label><input id="email" type="email" required placeholder="nome@empresa.com" /></div></div>${fields}<button class="btn btn--primary" type="submit">Enviar mensagem ${icons.arrow}</button><p class="form-note">Ao enviar, você concorda com nossa Política de Privacidade. Nenhuma informação será enviada nesta demonstração.</p></form></div></section>`;
+  return wrapByTheme(body);
 }
 
-function blog() { const articles = getContent().articles; return `${header()}<main id="main-content"><header class="page-hero"><div class="container"><span class="eyebrow">Conteúdos Result</span><h1 class="display">Perspectivas para um mercado de seguros mais informado.</h1><p class="copy">Análises e conteúdos institucionais sobre Seguro Fiança, regulação e experiência em jornadas de sinistro.</p></div></header><section class="section"><div class="container"><div class="insight-grid">${articles.map((a,i)=> i === 0 ? `<article class="insight-large reveal"><span>${esc(a.category)} · ${esc(a.date)}</span><h3>${esc(a.title)}</h3></article>` : `<article class="insight-item reveal"><span class="insight-date">${esc(a.date)}</span><h3>${esc(a.title)}</h3></article>`).join('')}</div></div></section></main>${footer()}`; }
-function legal(title) { return `${header()}<main id="main-content"><header class="page-hero"><div class="container"><span class="eyebrow">Institucional</span><h1 class="display">${title}</h1><p class="copy">Versão demonstrativa para apresentação comercial. O documento definitivo deverá ser revisado e aprovado pelas áreas responsáveis.</p></div></header><section class="section"><div class="container content-grid"><article class="article"><h2>Compromisso com transparência</h2><p>Esta página apresenta uma estrutura preparada para receber o conteúdo jurídico definitivo. A Result valoriza o tratamento responsável de dados e a clareza nas relações com todos os públicos.</p><h2>Aplicação futura</h2><p>Na versão de produção, este documento deverá conter as informações completas, data de vigência, canais de contato e demais disposições aplicáveis.</p></article></div></section></main>${footer()}`; }
-function notFound() { return `${header()}<main id="main-content"><section class="page-hero"><div class="container"><span class="eyebrow">Erro 404</span><h1 class="display">O caminho que você procura não está disponível.</h1><p class="copy">Talvez a página tenha sido atualizada ou o endereço não exista. Vamos ajudar você a voltar ao ponto certo.</p><div class="hero-actions"><a data-route href="/" class="btn btn--dark">Voltar para o início ${icons.arrow}</a></div></div></section></main>${footer()}`; }
+function blog() { const articles = getContent().articles; const body = `<header class="page-hero"><div class="container"><span class="eyebrow">Conteúdos Result</span><h1 class="display">Perspectivas para um mercado de seguros mais informado.</h1><p class="copy">Análises e conteúdos institucionais sobre Seguro Fiança, regulação e experiência em jornadas de sinistro.</p></div></header><section class="section"><div class="container"><div class="insight-grid">${articles.map((a,i)=> i === 0 ? `<article class="insight-large reveal"><span>${esc(a.category)} · ${esc(a.date)}</span><h3>${esc(a.title)}</h3></article>` : `<article class="insight-item reveal"><span class="insight-date">${esc(a.date)}</span><h3>${esc(a.title)}</h3></article>`).join('')}</div></div></section>`; return wrapByTheme(body); }
+function legal(title) { const body = `<header class="page-hero"><div class="container"><span class="eyebrow">Institucional</span><h1 class="display">${title}</h1><p class="copy">Versão demonstrativa para apresentação comercial. O documento definitivo deverá ser revisado e aprovado pelas áreas responsáveis.</p></div></header><section class="section"><div class="container content-grid"><article class="article"><h2>Compromisso com transparência</h2><p>Esta página apresenta uma estrutura preparada para receber o conteúdo jurídico definitivo. A Result valoriza o tratamento responsável de dados e a clareza nas relações com todos os públicos.</p><h2>Aplicação futura</h2><p>Na versão de produção, este documento deverá conter as informações completas, data de vigência, canais de contato e demais disposições aplicáveis.</p></article></div></section>`; return wrapByTheme(body); }
+function notFound() { const body = `<section class="page-hero"><div class="container"><span class="eyebrow">Erro 404</span><h1 class="display">O caminho que você procura não está disponível.</h1><p class="copy">Talvez a página tenha sido atualizada ou o endereço não exista. Vamos ajudar você a voltar ao ponto certo.</p><div class="hero-actions"><a data-route href="/" class="btn btn--dark">Voltar para o início ${icons.arrow}</a></div></div></section>`; return wrapByTheme(body); }
 
 /* ---------- Painel administrativo (demonstração funcional com localStorage) ---------- */
 
@@ -135,7 +293,8 @@ function login() { return `<main class="login"><form class="login-card" id="logi
 
 /* ---------- Roteamento e interações ---------- */
 
-function render() { const rawRoute = location.pathname.replace(/^\/+|\/+$/g, '').replace(/^[A-Za-z]:\/?/, ''); const route = !rawRoute || rawRoute.endsWith('index.html') ? 'home' : rawRoute; const segments = route.split('/'); let html; if(segments[0] === 'admin') html = adminApp(segments[1] || 'dashboard', segments[2]); else if(route === 'home') html=home(); else if(route==='contato') html=contactPage(); else if(route==='trabalhe-conosco') html=contactPage('Trabalhe conosco'); else if(route==='conteudos') html=blog(); else if(route==='politica-de-privacidade') html=legal('Política de Privacidade'); else if(route==='termos') html=legal('Termos de Uso'); else html=interior(route); app.innerHTML=html; bindInteractions(); window.scrollTo({top:0,behavior:'instant'}); }
+let lastRenderedPath = null;
+function render() { lastRenderedPath = location.pathname; const rawRoute = location.pathname.replace(/^\/+|\/+$/g, '').replace(/^[A-Za-z]:\/?/, ''); const route = !rawRoute || rawRoute.endsWith('index.html') ? 'home' : rawRoute; const segments = route.split('/'); const isAdminRoute = segments[0] === 'admin'; let html; if(isAdminRoute) html = adminApp(segments[1] || 'dashboard', segments[2]); else if(route === 'home') html=home(); else if(route==='contato') html=contactPage(); else if(route==='trabalhe-conosco') html=contactPage('Trabalhe conosco'); else if(route==='conteudos') html=blog(); else if(route==='politica-de-privacidade') html=legal('Política de Privacidade'); else if(route==='termos') html=legal('Termos de Uso'); else html=interior(route); app.innerHTML=html; app.dataset.section = isAdminRoute ? 'admin' : 'public'; document.documentElement.dataset.theme = getTheme(); if(!isAdminRoute) app.insertAdjacentHTML('beforeend', themeToggle()); bindInteractions(); window.scrollTo({top:0,behavior:'instant'}); }
 function navigate(href) { history.pushState({}, '', href); render(); }
 function toast(message) { const el=document.querySelector('.toast'); if(!el) return; el.textContent=message; el.classList.add('is-visible'); clearTimeout(window.toastTimeout); window.toastTimeout=setTimeout(()=>el.classList.remove('is-visible'),3200); }
 
@@ -146,8 +305,11 @@ function bindInteractions() {
   draftImages = {};
   document.querySelectorAll('[data-route]').forEach(link=>link.addEventListener('click',event=>{ if(link.target === '_blank') return; event.preventDefault(); navigate(link.getAttribute('href')); }));
   const menu=document.querySelector('.menu-button'); const nav=document.querySelector('.nav-links'); if(menu) menu.addEventListener('click',()=>{const open=nav.classList.toggle('is-open');menu.setAttribute('aria-expanded',String(open));});
+  const themeBtn=document.querySelector('[data-theme-toggle]'); if(themeBtn) themeBtn.addEventListener('click',()=>{ const next=THEME_ORDER[(THEME_ORDER.indexOf(getTheme())+1)%THEME_ORDER.length]; setTheme(next); const y=window.scrollY; render(); window.scrollTo({top:y,behavior:'instant'}); });
   const siteHeader=document.querySelector('.site-header'); if(siteHeader){const sync=()=>siteHeader.classList.toggle('is-scrolled',scrollY>16);sync();addEventListener('scroll',sync,{passive:true});}
-  const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');observer.unobserve(e.target);}}),{threshold:.12}); document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+  const heroNova=document.querySelector('.hero--nova');
+  if(heroNova && window.matchMedia && matchMedia('(pointer: fine)').matches){ heroNova.addEventListener('mousemove',event=>{ const r=heroNova.getBoundingClientRect(); heroNova.style.setProperty('--mx',`${((event.clientX-r.left)/r.width*100).toFixed(1)}%`); heroNova.style.setProperty('--my',`${((event.clientY-r.top)/r.height*100).toFixed(1)}%`); }); }
+  const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');e.target.querySelectorAll('[data-countup-target]').forEach(animateCountUp);observer.unobserve(e.target);}}),{threshold:.12}); document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
   document.querySelectorAll('[data-contact-type]').forEach(button=>button.addEventListener('click',()=>{ const type=button.dataset.contactType; app.innerHTML=contactPage(type); bindInteractions(); }));
   const contactForm=document.querySelector('#contact-form'); if(contactForm) contactForm.addEventListener('submit',event=>{event.preventDefault();toast('Mensagem registrada na demonstração. Em produção, ela seguirá o fluxo selecionado.');contactForm.reset();});
   const loginForm=document.querySelector('#login-form'); if(loginForm) loginForm.addEventListener('submit',event=>{event.preventDefault(); const email=document.querySelector('#login-email').value;const password=document.querySelector('#login-password').value;if(email==='admin@result.com'&&password==='123456'){sessionStorage.setItem('resultAdmin','true');navigate('/admin');}else toast('Use as credenciais de demonstração informadas abaixo.');});
@@ -249,4 +411,9 @@ function readTestimonialsForm() {
 // Compat: mantém referência exportada usada por versões anteriores.
 void hasCustomContent;
 
-addEventListener('popstate',render); render();
+// popstate também dispara para âncoras de página (ex.: "Nesta página",
+// "Voltar ao topo") já que são navegações de fragmento no mesmo documento.
+// Se o caminho não mudou, é uma âncora — deixa o navegador rolar até o
+// elemento normalmente em vez de re-renderizar e resetar o scroll pro topo.
+addEventListener('popstate',()=>{ if(location.pathname===lastRenderedPath) return; render(); });
+render();
