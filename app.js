@@ -26,6 +26,14 @@ function initials(name = '') {
   return name.trim().split(/\s+/).slice(0, 2).map(word => word[0] || '').join('').toUpperCase() || 'RA';
 }
 
+function plainAddress(value = '') {
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ', ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // Gera um slug de URL a partir de um texto (título de artigo). Remove
 // acentos e pontuação, mantém só letras/números separados por hífen.
 function slugify(text) {
@@ -268,14 +276,21 @@ function contactPage(type = 'Contato geral') {
   };
   const options = Object.keys(meta);
   const { settings } = getContent();
+  const mapsAddress = plainAddress(settings.address);
+  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsAddress)}`;
   const active = meta[type] || meta['Contato geral'];
-  const fields = type === 'Trabalhe conosco'
-    ? '<div class="field"><label for="role">Área de interesse</label><select id="role"><option>Selecione uma área</option><option>Regulação de sinistros</option><option>Atendimento</option><option>Operações</option></select></div><label class="upload-box" for="resume">Clique para selecionar seu currículo (simulação)<input id="resume" type="file" accept=".pdf,.doc,.docx"></label>'
-    : '<div class="field"><label for="company">Empresa</label><input id="company" placeholder="Nome da empresa" /></div><div class="field"><label for="message">Como podemos ajudar?</label><textarea id="message" placeholder="Descreva brevemente sua necessidade"></textarea></div>';
+  let fields = '';
+  if (type === 'Trabalhe conosco') {
+    fields = '<div class="admin-form__grid"><div class="field"><label for="name">Nome</label><input id="name" required placeholder="Seu nome" /></div><div class="field"><label for="linkedin">LinkedIn</label><input id="linkedin" type="url" required placeholder="https://www.linkedin.com/in/seu-perfil" /></div></div><div class="field"><label for="role">Área de interesse</label><select id="role" required><option value="">Selecione uma área</option><option>Regulação de sinistros</option><option>Atendimento</option><option>Operações</option></select></div><label class="upload-box" for="resume">Clique para selecionar seu currículo (simulação)<input id="resume" type="file" accept=".pdf,.doc,.docx" required></label>';
+  } else if (type === 'SAC' || type === 'Sugestões') {
+    fields = '<div class="admin-form__grid"><div class="field"><label for="name">Nome</label><input id="name" required placeholder="Seu nome" /></div><div class="field"><label for="email">E-mail</label><input id="email" type="email" required placeholder="nome@empresa.com" /></div></div><div class="field"><label for="message">Como podemos ajudar?</label><textarea id="message" required placeholder="Descreva brevemente sua necessidade"></textarea></div>';
+  } else {
+    fields = '<div class="admin-form__grid"><div class="field"><label for="name">Nome</label><input id="name" required placeholder="Seu nome" /></div><div class="field"><label for="email">E-mail</label><input id="email" type="email" required placeholder="nome@empresa.com" /></div></div><div class="field"><label for="company">Empresa</label><input id="company" placeholder="Nome da empresa" /></div><div class="field"><label for="message">Como podemos ajudar?</label><textarea id="message" required placeholder="Descreva brevemente sua necessidade"></textarea></div>';
+  }
   const whatsapp = settings.whatsapp
     ? `<a class="contact-aside__row" href="https://wa.me/${esc(settings.whatsapp)}" target="_blank" rel="noopener"><span class="contact-aside__ico">${icons.chat}</span><span><strong>WhatsApp</strong><small>Atendimento rápido</small></span></a>`
     : '';
-  const body = `<header class="page-hero"><div class="container"><nav class="breadcrumb" aria-label="Breadcrumb"><a data-route href="/">Início</a><span>/</span><span>Contato</span></nav><span class="eyebrow">Fale com a Result</span><h1 class="display">Toda boa relação começa por uma conversa clara.</h1><p class="copy">Escolha o assunto para que sua mensagem siga o caminho mais adequado. Nesta demonstração, os envios são simulados.</p></div></header><section class="section"><div class="container form-shell"><aside class="form-side"><div class="form-tabs" role="tablist" aria-label="Tipo de atendimento">${options.map(option=>`<button class="form-tab ${option === type ? 'is-active':''}" role="tab" aria-selected="${option === type}" data-contact-type="${option}"><span class="form-tab__ico">${meta[option].icon}</span><span class="form-tab__text"><strong>${option}</strong><small>${meta[option].hint}</small></span></button>`).join('')}</div><div class="contact-aside"><h3 class="contact-aside__title">Canais diretos</h3><a class="contact-aside__row" href="tel:+${esc(settings.phoneHref)}"><span class="contact-aside__ico">${icons.phone}</span><span><strong>${esc(settings.phone)}</strong><small>Seg. a sex., 9h às 18h</small></span></a>${whatsapp}<div class="contact-aside__row"><span class="contact-aside__ico">${icons.pin}</span><span><strong>Escritório</strong><small>${settings.address}</small></span></div></div></aside><form id="contact-form"><header class="form-head"><h2 class="form-title">${type}</h2><p class="form-subtitle">${active.subtitle}</p></header><div class="admin-form__grid"><div class="field"><label for="name">Nome</label><input id="name" required placeholder="Seu nome" /></div><div class="field"><label for="email">E-mail</label><input id="email" type="email" required placeholder="nome@empresa.com" /></div></div>${fields}<button class="btn btn--primary" type="submit">Enviar mensagem ${icons.arrow}</button><p class="form-note">Ao enviar, você concorda com nossa Política de Privacidade. Nenhuma informação será enviada nesta demonstração.</p></form></div></section>`;
+  const body = `<header class="page-hero"><div class="container"><nav class="breadcrumb" aria-label="Breadcrumb"><a data-route href="/">Início</a><span>/</span><span>Contato</span></nav><span class="eyebrow">Fale com a Result</span><h1 class="display">Toda boa relação começa por uma conversa clara.</h1><p class="copy">Escolha o assunto para que sua mensagem siga o caminho mais adequado. Nesta demonstração, os envios são simulados.</p></div></header><section class="section"><div class="container form-shell"><aside class="form-side"><div class="form-tabs" role="tablist" aria-label="Tipo de atendimento">${options.map(option=>`<button class="form-tab ${option === type ? 'is-active':''}" role="tab" aria-selected="${option === type}" data-contact-type="${option}"><span class="form-tab__ico">${meta[option].icon}</span><span class="form-tab__text"><strong>${option}</strong><small>${meta[option].hint}</small></span></button>`).join('')}</div><div class="contact-aside"><h3 class="contact-aside__title">Canais diretos</h3><a class="contact-aside__row" href="tel:+${esc(settings.phoneHref)}"><span class="contact-aside__ico">${icons.phone}</span><span><strong>${esc(settings.phone)}</strong><small>Seg. a sex., 9h às 18h</small></span></a>${whatsapp}<a class="contact-aside__row" href="${mapsHref}" target="_blank" rel="noopener" aria-label="Abrir endereço do escritório no Google Maps"><span class="contact-aside__ico">${icons.pin}</span><span><strong>Escritório</strong><small>${settings.address}</small></span></a></div></aside><form id="contact-form"><header class="form-head"><h2 class="form-title">${type}</h2><p class="form-subtitle">${active.subtitle}</p></header>${fields}<button class="btn btn--primary" type="submit">Enviar mensagem ${icons.arrow}</button><p class="form-note">Ao enviar, você concorda com nossa Política de Privacidade. Nenhuma informação será enviada nesta demonstração.</p></form></div></section>`;
   return wrapByTheme(body);
 }
 
