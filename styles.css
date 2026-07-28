@@ -607,3 +607,38 @@ a.contact-aside__row:hover strong { color:var(--blue); }
 @media (max-width: 980px) { .hero-grid{grid-template-columns:1fr;gap:38px}.hero-card{max-width:470px;align-self:start}.trust-grid{grid-template-columns:repeat(2,1fr)}.trust-item:nth-child(3){border-left:0}.cards{grid-template-columns:repeat(2,1fr)}.split,.form-shell{grid-template-columns:1fr}.art-panel{max-width:600px;min-height:370px}.footer-grid{grid-template-columns:repeat(2,1fr)}.metric-grid,.proof-metrics{grid-template-columns:repeat(2,1fr)}.proof-grid,.proof-lower{grid-template-columns:1fr}.admin-grid{grid-template-columns:1fr}.content-grid{grid-template-columns:1fr}.side-nav{display:none}.admin-layout{grid-template-columns:210px minmax(0,1fr)} }
 @media (max-width: 720px) { .container{width:min(100% - 32px,1180px)}.section{padding:64px 0}.site-header{padding:10px 0}.site-header .logo img,.site-header.is-scrolled .logo img{height:60px}.nav-links{display:none;position:absolute;z-index:40;top:100%;left:16px;right:16px;align-items:stretch;flex-direction:column;gap:0;padding:10px;background:#fff;color:var(--ink);border-radius:12px;box-shadow:var(--shadow)}.nav-links.is-open{display:flex}.nav-links a{padding:11px}.nav-links .btn{margin-top:5px}.menu-button{display:block}.hero{min-height:auto}.hero-grid{min-height:auto;padding:104px 0 48px}.hero-title{font-size:clamp(2.1rem,9vw,3.2rem)}.hero-copy{font-size:1rem}.hero-scroll{display:none}.trust-strip{margin-top:-20px}.trust-grid{grid-template-columns:1fr}.trust-item{min-height:79px;border-top:1px solid var(--line);border-left:0}.trust-item:first-child{border-top:0}.cards,.timeline,.proof-metrics{grid-template-columns:1fr}.step:not(:last-child)::after{display:none}.process-head,.cta-inner{align-items:flex-start;flex-direction:column}.insight-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr;gap:23px}.footer-bottom{align-items:flex-start;flex-direction:column}.partner-plates{flex-direction:column}.leader-card{align-items:flex-start;flex-direction:column}.page-hero{padding:135px 0 58px}.form-shell{padding:18px}.admin-layout{display:block}.admin-sidebar{position:relative;height:auto;padding:12px}.admin-sidebar .logo{margin:5px 8px 13px}.admin-nav{grid-template-columns:repeat(3,1fr)}.admin-nav button{justify-content:center;padding:9px 4px;font-size:.62rem}.admin-nav button .icon{display:none}.admin-sidebar__bottom{display:none}.admin-top{padding:14px 16px}.admin-top__context{font-size:.65rem}.admin-top__context strong{font-size:.9rem}.admin-user span{display:none}.admin-content{padding:20px 16px}.metric-grid{grid-template-columns:1fr 1fr}.metric{padding:14px}.metric strong{font-size:1.4rem}.admin-head{align-items:flex-start;flex-direction:column}.admin-form{padding:17px}.admin-form__grid{grid-template-columns:1fr}.table th:nth-child(3),.table td:nth-child(3){display:none}.chart{height:160px}.values{grid-template-columns:1fr}.map-block{min-height:410px}.map-copy{left:24px;right:24px}.map-pin{display:none} }
 @media (max-width: 480px) { .container{width:min(100% - 28px,1180px)}.section{padding:52px 0}.site-header .logo img,.site-header.is-scrolled .logo img{height:52px}.hero-grid{padding:92px 0 40px;gap:28px}.hero-card{padding:20px}.hero-actions{gap:10px}.hero-actions .btn,.cta-inner .btn{width:100%}.trust-item{padding:16px 18px}.proof-metrics{grid-template-columns:1fr}.metric-grid{grid-template-columns:1fr}.admin-nav{grid-template-columns:repeat(2,1fr)}.footer-grid{grid-template-columns:1fr} }
+
+/* Página de artigo individual: medida de leitura + menu "Outros artigos"
+   (reaproveita o cartão .side-nav já usado em páginas institucionais). */
+.article--post { max-width: 700px; }
+.article-aside__head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; }
+.article-aside__head strong { margin-bottom:0; }
+.article-aside__all { color:var(--blue); font-size:.7rem; font-weight:800; }
+.article-aside__all:hover { text-decoration:underline; }
+.article-aside__item { display:block; padding:14px 0; border-top:1px solid var(--line); }
+.article-aside__item:first-of-type { border-top:0; }
+.article-aside__star { display:flex; align-items:center; gap:5px; margin-bottom:6px; color:var(--champagne); font:800 .62rem "DM Mono",monospace; letter-spacing:.06em; text-transform:uppercase; }
+.article-aside__star .icon { width:12px; height:12px; fill:var(--champagne); stroke:var(--champagne); }
+.article-aside__date { display:block; margin-bottom:4px; color:var(--champagne); font:600 .65rem "DM Mono",monospace; letter-spacing:.05em; text-transform:uppercase; }
+.article-aside__item h3 { margin:0 0 4px; color:var(--ink); font-size:.85rem; line-height:1.4; }
+.article-aside__item p { margin:0; color:var(--muted); font-size:.75rem; line-height:1.5; }
+.article-aside__item:hover h3 { color:var(--blue); }
+.article-aside__empty { margin:0; color:var(--muted); font-size:.8rem; }
+.insight-empty { grid-column:1/-1; padding:40px; color:var(--muted); text-align:center; font-size:.85rem; }
+
+/* Estrela de destaque editorial (admin) — reaproveita o dourado da marca */
+.icon--star { fill:none; }
+.star-toggle { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:32px; height:32px; padding:0; color:var(--muted); border:0; border-radius:8px; background:transparent; transition:background .15s ease, color .15s ease; }
+.star-toggle .icon--star { width:18px; height:18px; stroke:currentColor; transition:fill .15s ease, stroke .15s ease; }
+.star-toggle:hover { color:var(--champagne); background:#f7f0e0; }
+.star-toggle.is-active { color:var(--champagne); }
+.star-toggle.is-active .icon--star { fill:var(--champagne); }
+.star-toggle--labeled { width:auto; padding:0 16px; border:1px solid var(--line); font-size:.73rem; font-weight:800; }
+.star-toggle--labeled.is-active { border-color:rgba(200,173,119,.5); background:#f7f0e0; }
+
+@media (max-width: 980px) {
+  /* A navegação entre artigos é funcional, não decorativa — ao contrário
+     do "Nesta página" das páginas institucionais, não pode simplesmente
+     sumir no mobile (a regra .side-nav{display:none} já existe acima). */
+  .article-aside { display:block; position:static; margin-top:32px; }
+}

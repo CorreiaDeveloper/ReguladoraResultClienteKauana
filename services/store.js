@@ -63,9 +63,47 @@ export const DEFAULTS = {
     leader: ''
   },
   articles: [
-    { title: 'Seguro Fiança: por que a clareza na comunicação também reduz riscos', category: 'Regulação', date: '21 jul 2026', status: 'Publicado' },
-    { title: 'O papel do atendimento humanizado em jornadas de sinistro', category: 'Experiência', date: '14 jul 2026', status: 'Publicado' },
-    { title: 'Documentação organizada: a base para decisões mais seguras', category: 'Gestão', date: '08 jul 2026', status: 'Rascunho' }
+    {
+      title: 'Seguro Fiança: por que a clareza na comunicação também reduz riscos',
+      category: 'Regulação',
+      date: '21 jul 2026',
+      status: 'Publicado',
+      featured: true,
+      summary: 'Como uma comunicação transparente entre seguradora, inquilino e imobiliária reduz conflitos e acelera a resolução de sinistros de Seguro Fiança.',
+      content: 'Em processos de Seguro Fiança, a maior parte dos conflitos não nasce do mérito do caso, mas da falta de clareza sobre o que está acontecendo e por quê. Um inquilino que não entende o motivo de uma cobrança tende a resistir a ela. Uma imobiliária que não recebe retorno sobre o andamento de um processo perde confiança na condução. Comunicação técnica bem-feita não é apenas cortesia: é redução de risco operacional.\n\nA Result estrutura cada etapa da cobrança e da análise documental para que as partes envolvidas saibam, a qualquer momento, em que estágio o processo está e o que é esperado delas. Isso significa evitar jargão desnecessário, explicar prazos com antecedência e documentar cada decisão de forma rastreável.\n\nO resultado prático é mensurável: processos com comunicação clara desde o início tendem a ser resolvidos mais rápido e com menos reclamações formais. Clareza não substitui rigor técnico — ela é o que permite que o rigor técnico seja compreendido e aceito por quem está do outro lado da mesa.'
+    },
+    {
+      title: 'O papel do atendimento humanizado em jornadas de sinistro',
+      category: 'Experiência',
+      date: '14 jul 2026',
+      status: 'Publicado',
+      summary: 'Por trás de cada processo de cobrança existe uma pessoa. Entenda como a Result equilibra rigor técnico e cuidado humano nas jornadas de sinistro.',
+      content: 'Um sinistro de Seguro Fiança quase sempre está associado a um momento difícil na vida de alguém: perda de renda, mudança de endereço, uma relação com o locador que já não é a mesma. Tratar cada contato apenas como um número de processo ignora esse contexto — e, na prática, torna a cobrança menos eficaz, não mais.\n\nAtendimento humanizado, para a Result, não significa flexibilizar critérios técnicos. Significa ouvir antes de decidir, explicar o motivo de cada exigência documental e reconhecer que negociações bem conduzidas preservam relações que vão continuar existindo depois que o processo se encerra — entre inquilino e imobiliária, entre corretor e seguradora.\n\nEssa combinação de critério técnico com escuta ativa é o que sustenta uma taxa de resolutividade consistente sem custo reputacional para as seguradoras parceiras. Regulação bem feita não é apenas seguir o processo certo; é conduzir pessoas por ele com respeito.'
+    },
+    {
+      title: 'Documentação organizada: a base para decisões mais seguras',
+      category: 'Gestão',
+      date: '08 jul 2026',
+      status: 'Rascunho',
+      summary: 'Uma análise documental bem estruturada é o que sustenta decisões rápidas e seguras em processos de Seguro Fiança.',
+      content: 'Decisões rápidas em regulação de sinistros não vêm de atalhos — vêm de documentação organizada desde o primeiro contato. Quando cada documento recebido é catalogado, validado e vinculado corretamente ao contrato de origem, a análise deixa de depender de retrabalho e passa a ser previsível.\n\nA Result trata a organização documental como parte central da operação, não como uma etapa administrativa secundária. Isso reduz o tempo entre o acionamento do sinistro e uma resposta conclusiva, e diminui a chance de reabertura de casos por documentação incompleta.\n\nEste texto ainda está em rascunho e será revisado antes da publicação.'
+    },
+    {
+      title: 'Cinco perguntas que toda imobiliária deve fazer antes de acionar um sinistro',
+      category: 'Gestão',
+      date: '28 jun 2026',
+      status: 'Publicado',
+      summary: 'Um roteiro simples para organizar informações antes do acionamento e evitar atrasos na condução do processo de Seguro Fiança.',
+      content: 'O tempo entre o acionamento de um sinistro e sua resolução costuma depender menos da complexidade do caso e mais da qualidade das informações enviadas logo no início. Reunir o essencial antes de abrir o processo evita idas e vindas que atrasam a análise para todos os envolvidos.\n\nAntes de acionar, vale confirmar: o contrato de locação está atualizado e assinado por todas as partes? Há registro claro do período de inadimplência? Os dados de contato do inquilino e do fiador estão corretos? Existe algum acordo informal em andamento que precise ser documentado? A imobiliária tem os comprovantes de tentativa de contato prévio?\n\nNenhuma dessas perguntas exige um esforço grande — mas juntas, elas reduzem exigências de complementação documental, que é a causa mais comum de atraso em processos de Seguro Fiança. Um acionamento bem preparado é o primeiro passo para uma condução mais rápida.'
+    },
+    {
+      title: 'Seguro Fiança em números: o que os dados de resolutividade realmente mostram',
+      category: 'Institucional',
+      date: '30 mai 2026',
+      status: 'Publicado',
+      summary: 'Indicadores de resolutividade dizem mais sobre processo do que sobre sorte. Entenda o que está por trás de uma boa taxa de resolução.',
+      content: 'É comum tratar a taxa de resolutividade como um número isolado — um índice a ser perseguido. Mas por trás de qualquer indicador consistente existe uma estrutura: método de análise, comunicação padronizada e critérios de decisão que não mudam de caso para caso.\n\nQuando uma operação de Seguro Fiança mantém resolutividade estável mês a mês, isso normalmente indica que o processo é replicável — não que os casos ficaram mais fáceis. Times que dependem de esforço individual para "destravar" processos tendem a apresentar resultados instáveis, mesmo quando pontualmente bons.\n\nPara seguradoras avaliando parceiros de regulação, olhar a consistência do indicador ao longo do tempo diz mais do que o valor absoluto em um único mês. Processo bem desenhado é o que sustenta resultado bom de forma repetida.'
+    }
   ],
   contacts: [
     { person: 'Mariana Costa', subject: 'Solicitação de informações institucionais', type: 'Parceria', status: 'Novo', date: 'Hoje, 10:42' },
