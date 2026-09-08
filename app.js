@@ -34,6 +34,38 @@ function plainAddress(value = '') {
     .trim();
 }
 
+function appBasePath() {
+  const segments = location.pathname.split('/').filter(Boolean);
+  return segments.length > 1 ? `/${segments[0]}` : '';
+}
+
+function stripBasePath(pathname = location.pathname) {
+  const base = appBasePath();
+  const safePath = pathname || '/';
+  if (!base || base === '/') return safePath;
+  if (safePath.startsWith(`${base}/`)) return safePath.slice(base.length) || '/';
+  if (safePath === base) return '/';
+  return safePath;
+}
+
+function normalizeRouteHref(href = '.') {
+  if (!href || href === '/' || href === './') return '.';
+  if (/^(https?:|mailto:|tel:|#|\?)/i.test(href)) return href;
+  const cleaned = String(href).replace(/^\/+/, '');
+  return cleaned ? `./${cleaned}` : '.';
+}
+
+function normalizePageLinks(root = app) {
+  if (!root) return;
+  root.querySelectorAll('[data-route],[href^="/"],[src^="/"]').forEach(el => {
+    const attr = el.hasAttribute('href') ? 'href' : el.hasAttribute('src') ? 'src' : null;
+    if (!attr) return;
+    const value = el.getAttribute(attr);
+    if (!value) return;
+    el.setAttribute(attr, normalizeRouteHref(value));
+  });
+}
+
 // Gera um slug de URL a partir de um texto (título de artigo). Remove
 // acentos e pontuação, mantém só letras/números separados por hífen.
 function slugify(text) {
@@ -194,7 +226,7 @@ const pageData = {
   'para-corretores': { eyebrow: 'Para corretores', title: 'Parceiros bem informados fortalecem a jornada de todos.', lead: 'Corretores são parte essencial da cadeia do Seguro Fiança. Por isso, oferecemos uma experiência de atendimento clara, orientada e respeitosa.', sections: [['Orientação sem ruído', 'Ajudamos a tornar cada etapa mais compreensível para você e seus clientes.'], ['Retornos estruturados', 'Informações objetivas ajudam a reduzir incertezas e facilitam o acompanhamento.'], ['Relação de longo prazo', 'Nossa atuação é pautada por diálogo profissional e cuidado com a experiência de quem confia em nosso trabalho.']] }
 };
 
-function logo() { return '<a class="logo" href="/" data-route aria-label="Result Reguladora de Sinistros — início"><img src="/resultlogo.png" alt="Result Reguladora de Sinistros" /></a>'; }
+function logo() { return `<a class="logo" href="${normalizeRouteHref('/')}" data-route aria-label="Result Reguladora de Sinistros — início"><img src="./resultlogo.png" alt="Result Reguladora de Sinistros" /></a>`; }
 const navGroups = {
   'quem-somos': ['quem-somos', 'nossa-historia', 'como-atuamos'],
   'servicos': ['servicos', 'para-seguradoras', 'para-imobiliarias', 'para-corretores'],
@@ -202,10 +234,13 @@ const navGroups = {
   'conteudos': ['conteudos']
 };
 
-function currentRoute() { const raw = location.pathname.replace(/^\/+|\/+$/g, '').replace(/^[A-Za-z]:\/?/, ''); return !raw || raw.endsWith('index.html') ? 'home' : raw.split('/')[0]; }
+function currentRoute() {
+  const raw = stripBasePath(location.pathname).replace(/^\/+|\/+$/g, '').replace(/^[A-Za-z]:\/?/, '');
+  return !raw || raw.endsWith('index.html') ? 'home' : raw.split('/')[0];
+}
 
-function header() { const route = currentRoute(); const link = (href, group, label) => `<a href="/${href}" data-route${navGroups[group].includes(route) ? ' class="is-active" aria-current="page"' : ''}>${label}</a>`; return `<header class="site-header"><div class="container nav">${logo()}<button class="menu-button" aria-label="Abrir menu" aria-expanded="false"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><nav class="nav-links" aria-label="Navegação principal">${link('quem-somos','quem-somos','Empresa')}${link('servicos','servicos','Serviços')}${link('seguro-fianca','seguro-fianca','Seguro Fiança')}${link('conteudos','conteudos','Conteúdos')}<a href="/contato" data-route class="btn btn--primary">Fale com a Result ${icons.arrow}</a></nav></div></header>`; }
-function footer() { const s = getContent().settings; return `<footer class="site-footer"><div class="container"><div class="footer-grid"><div class="footer-brand">${logo()}<p>Regulação de sinistros especializada em Seguro Fiança. Critério técnico e cuidado em cada relação.</p></div><div class="footer-col"><h3>Institucional</h3><a data-route href="/quem-somos">Quem somos</a><a data-route href="/nossa-historia">Nossa história</a><a data-route href="/como-atuamos">Como atuamos</a><a data-route href="/servicos">Serviços</a></div><div class="footer-col"><h3>Para o mercado</h3><a data-route href="/para-seguradoras">Seguradoras</a><a data-route href="/para-imobiliarias">Imobiliárias</a><a data-route href="/para-corretores">Corretores</a><a data-route href="/trabalhe-conosco">Trabalhe conosco</a></div><div class="footer-col"><h3>Contato</h3><p>${s.address}</p><a href="tel:+${esc(s.phoneHref)}">${esc(s.phone)}</a>${s.whatsapp ? `<a href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}<a data-route href="/politica-de-privacidade">Privacidade</a><a data-route href="/termos">Termos de uso</a><a data-route href="/admin">Área administrativa (demo)</a></div></div><div class="footer-bottom"><span>© ${new Date().getFullYear()} Result Reguladora de Sinistros.</span><a href="#top">Voltar ao topo ↑</a></div></div></footer>`; }
+function header() { const route = currentRoute(); const link = (href, group, label) => `<a href="${normalizeRouteHref(href)}" data-route${navGroups[group].includes(route) ? ' class="is-active" aria-current="page"' : ''}>${label}</a>`; return `<header class="site-header"><div class="container nav">${logo()}<button class="menu-button" aria-label="Abrir menu" aria-expanded="false"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><nav class="nav-links" aria-label="Navegação principal">${link('quem-somos','quem-somos','Empresa')}${link('servicos','servicos','Serviços')}${link('seguro-fianca','seguro-fianca','Seguro Fiança')}${link('conteudos','conteudos','Conteúdos')}<a href="${normalizeRouteHref('contato')}" data-route class="btn btn--primary">Fale com a Result ${icons.arrow}</a></nav></div></header>`; }
+function footer() { const s = getContent().settings; return `<footer class="site-footer"><div class="container"><div class="footer-grid"><div class="footer-brand">${logo()}<p>Regulação de sinistros especializada em Seguro Fiança. Critério técnico e cuidado em cada relação.</p></div><div class="footer-col"><h3>Institucional</h3><a data-route href="${normalizeRouteHref('quem-somos')}">Quem somos</a><a data-route href="${normalizeRouteHref('nossa-historia')}">Nossa história</a><a data-route href="${normalizeRouteHref('como-atuamos')}">Como atuamos</a><a data-route href="${normalizeRouteHref('servicos')}">Serviços</a></div><div class="footer-col"><h3>Para o mercado</h3><a data-route href="${normalizeRouteHref('para-seguradoras')}">Seguradoras</a><a data-route href="${normalizeRouteHref('para-imobiliarias')}">Imobiliárias</a><a data-route href="${normalizeRouteHref('para-corretores')}">Corretores</a><a data-route href="${normalizeRouteHref('trabalhe-conosco')}">Trabalhe conosco</a></div><div class="footer-col"><h3>Contato</h3><p>${s.address}</p><a href="tel:+${esc(s.phoneHref)}">${esc(s.phone)}</a>${s.whatsapp ? `<a href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}<a data-route href="${normalizeRouteHref('politica-de-privacidade')}">Privacidade</a><a data-route href="${normalizeRouteHref('termos')}">Termos de uso</a><a data-route href="${normalizeRouteHref('admin')}">Área administrativa (demo)</a></div></div><div class="footer-bottom"><span>© ${new Date().getFullYear()} Result Reguladora de Sinistros.</span><a href="#top">Voltar ao topo ↑</a></div></div></footer>`; }
 
 function home() {
   const c = getContent();
@@ -356,8 +391,27 @@ function login() { return `<main class="login"><form class="login-card" id="logi
 /* ---------- Roteamento e interações ---------- */
 
 let lastRenderedPath = null;
-function render() { lastRenderedPath = location.pathname; const rawRoute = location.pathname.replace(/^\/+|\/+$/g, '').replace(/^[A-Za-z]:\/?/, ''); const route = !rawRoute || rawRoute.endsWith('index.html') ? 'home' : rawRoute; const segments = route.split('/'); const isAdminRoute = segments[0] === 'admin'; let html; if(isAdminRoute) html = adminApp(segments[1] || 'dashboard', segments[2]); else if(route === 'home') html=home(); else if(route==='contato') html=contactPage(); else if(route==='trabalhe-conosco') html=contactPage('Trabalhe conosco'); else if(route==='conteudos') html=blog(); else if(segments[0]==='conteudos' && segments[1]) html=articlePage(segments[1]); else if(route==='politica-de-privacidade') html=legal('Política de Privacidade'); else if(route==='termos') html=legal('Termos de Uso'); else html=interior(route); app.innerHTML=html; app.dataset.section = isAdminRoute ? 'admin' : 'public'; document.documentElement.dataset.theme = getTheme(); if(!isAdminRoute) app.insertAdjacentHTML('beforeend', themeToggle()); bindInteractions(); window.scrollTo({top:0,behavior:'instant'}); }
-function navigate(href) { history.pushState({}, '', href); render(); }
+function render() {
+  lastRenderedPath = location.pathname;
+  const rawRoute = stripBasePath(location.pathname).replace(/^\/+|\/+$/g, '').replace(/^[A-Za-z]:\/?/, '');
+  const route = !rawRoute || rawRoute.endsWith('index.html') ? 'home' : rawRoute;
+  const segments = route.split('/');
+  const isAdminRoute = segments[0] === 'admin';
+  let html;
+  if(isAdminRoute) html = adminApp(segments[1] || 'dashboard', segments[2]); else if(route === 'home') html=home(); else if(route==='contato') html=contactPage(); else if(route==='trabalhe-conosco') html=contactPage('Trabalhe conosco'); else if(route==='conteudos') html=blog(); else if(segments[0]==='conteudos' && segments[1]) html=articlePage(segments[1]); else if(route==='politica-de-privacidade') html=legal('Política de Privacidade'); else if(route==='termos') html=legal('Termos de Uso'); else html=interior(route);
+  app.innerHTML = html;
+  normalizePageLinks(app);
+  app.dataset.section = isAdminRoute ? 'admin' : 'public';
+  document.documentElement.dataset.theme = getTheme();
+  if(!isAdminRoute) app.insertAdjacentHTML('beforeend', themeToggle());
+  bindInteractions();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function navigate(href) {
+  const nextHref = normalizeRouteHref(href || '.');
+  history.pushState({}, '', nextHref);
+  render();
+}
 function toast(message) { const el=document.querySelector('.toast'); if(!el) return; el.textContent=message; el.classList.add('is-visible'); clearTimeout(window.toastTimeout); window.toastTimeout=setTimeout(()=>el.classList.remove('is-visible'),3200); }
 
 // Imagens selecionadas mas ainda não salvas (por chave), reiniciadas a cada render.
