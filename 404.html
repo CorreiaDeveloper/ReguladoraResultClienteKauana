@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Redirecionando...</title>
+    <script>
+      (() => {
+        const currentPath = window.location.pathname || '/';
+        const repo = currentPath.startsWith('/ReguladoraResultClienteKauana') ? '/ReguladoraResultClienteKauana' : '';
+        const pathname = repo ? (currentPath.slice(repo.length) || '/') : currentPath;
+        const redirect = `${pathname}${window.location.search || ''}`;
+        const target = `${repo || './'}?redirect=${encodeURIComponent(redirect)}`;
+        window.location.replace(target);
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>Redirecionando para a página inicial...</noscript>
+  </body>
+</html>

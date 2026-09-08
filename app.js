@@ -391,10 +391,20 @@ function login() { return `<main class="login"><form class="login-card" id="logi
 /* ---------- Roteamento e interações ---------- */
 
 let lastRenderedPath = null;
+function getInitialRoute() {
+  const params = new URLSearchParams(location.search);
+  const redirect = params.get('redirect') || params.get('p');
+  if (redirect) {
+    const cleaned = redirect.replace(/^\/+/, '');
+    return cleaned || 'home';
+  }
+  const rawRoute = stripBasePath(location.pathname).replace(/^\/+|\/+$/g, '').replace(/^[A-Za-z]:\/?/, '');
+  return !rawRoute || rawRoute.endsWith('index.html') ? 'home' : rawRoute;
+}
+
 function render() {
   lastRenderedPath = location.pathname;
-  const rawRoute = stripBasePath(location.pathname).replace(/^\/+|\/+$/g, '').replace(/^[A-Za-z]:\/?/, '');
-  const route = !rawRoute || rawRoute.endsWith('index.html') ? 'home' : rawRoute;
+  const route = getInitialRoute();
   const segments = route.split('/');
   const isAdminRoute = segments[0] === 'admin';
   let html;
