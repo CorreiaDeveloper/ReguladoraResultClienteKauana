@@ -35,17 +35,23 @@ function plainAddress(value = '') {
 }
 
 function appBasePath() {
-  const segments = location.pathname.split('/').filter(Boolean);
-  return segments.length > 1 ? `/${segments[0]}` : '';
+  const safePath = (location.pathname || '/').replace(/\/+$/, '') || '/';
+  const segments = safePath.split('/').filter(Boolean);
+  if (!segments.length) return '';
+
+  const isGitHubPagesProject = location.hostname.endsWith('github.io') && segments.length >= 1;
+  if (isGitHubPagesProject) return `/${segments[0]}`;
+  if (segments.length > 1) return `/${segments[0]}`;
+  return '';
 }
 
 function stripBasePath(pathname = location.pathname) {
   const base = appBasePath();
-  const safePath = pathname || '/';
-  if (!base || base === '/') return safePath;
+  const safePath = (pathname || '/').replace(/\/+$/, '') || '/';
+  if (!base || base === '/') return safePath || '/';
   if (safePath.startsWith(`${base}/`)) return safePath.slice(base.length) || '/';
   if (safePath === base) return '/';
-  return safePath;
+  return safePath || '/';
 }
 
 function normalizeRouteHref(href = '.') {
